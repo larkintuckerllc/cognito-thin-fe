@@ -1,25 +1,47 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useCallback, useEffect, useState } from 'react';
+import Authenticated from './components/Authenticated';
+import { getTokens, login, loginUrl, logout, logoutUrl } from './api/auth';
+
+const params = (new URL(document.location)).searchParams;
+const code = params.get('code'); 
+const tokens = getTokens();
 
 function App() {
+  const [authenticated, setAuthenticated] = useState(tokens !== null);
+  const [authenticating, setAuthenticating] = useState(code !== null);
+  useEffect(() => {
+    const execute = async () => {
+      window.history.replaceState({}, document.title, '/');
+      try {
+        await login(code);
+        setAuthenticated(true);
+      } catch (err) {
+        // DO NOTHING
+      }
+      setAuthenticating(false);
+    };
+    if (code !== null) {
+      execute();
+    }
+  }, []);
+  const handleClick = useCallback(() => {
+    logout();
+    window.location.assign(logoutUrl);
+  }, []);
+
+  if (authenticating) {
+    return <div>authenticating...</div>;
+  }
+  if (!authenticated) {
+    return <a href={loginUrl}>Login</a>;
+  }
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <div>
+        <button onClick={handleClick}>Logout</button>
+      </div>
+      <Authenticated />
+    </>
   );
 }
 
